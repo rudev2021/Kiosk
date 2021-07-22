@@ -1,0 +1,276 @@
+﻿@model M5.Areas.Workgroup.Models.KioskView
+
+@{
+    Layout = "~/Areas/Workgroup/Views/Shared/_Layout.cshtml";
+}
+
+@section LeftBar {
+
+    @Html.Action("LeftNav", "LeftNav", new { pageName = @ViewBag.pageName })
+
+}
+
+
+@section RightBar {
+
+    @Html.Partial("_RightBar")
+
+}
+
+
+
+<style>
+
+    #Kiosk input[type=radio], #Kiosk input[type=checkbox] {
+        height: auto;
+    }
+
+    #Kiosk .pull-right {
+        padding-right: 1em;
+    }
+
+    #Kiosk span.tag-label {
+        width: 60px;
+        display: inline-block;
+    }
+</style>
+
+
+
+
+
+<div id="Kiosk" class="">
+
+
+    @using System.Collections.Generic;
+
+    @using M5.Areas.Workgroup.Models;
+
+
+    @{
+
+        bool isKioskMgr = (ViewBag.isKioskMgr == true);
+
+        string groupName = Shared.GetGroupName();
+
+    }
+
+
+
+    <div class="row">
+
+        <div class="col-xs-9"><span class="group-name">@(groupName) Events</span></div>
+
+        <div class="pull-right"><a href="@Html.Raw(@ViewBag.backLink)"><iwe-button unresolved><i class="fa-arrow-circle-left"></i> Back</iwe-button></a></div>
+
+    </div>
+
+
+
+    @if (true)
+    {
+        <h4>
+            @ViewBag.title (@Model.calendarID) - @ViewBag.pageName
+        </h4>
+
+        <br />
+    }
+
+
+
+    @if (!isKioskMgr)
+    {
+
+        <iwe-message class="warning-normal paragraph">
+
+            <i class="fa-lg fa-exclamation-triangle"></i>
+
+            <span>You are not an Event Kiosk manager for @(groupName), please contact UIT for assistance.</span>
+
+        </iwe-message>
+
+    }
+
+
+
+    @using (Html.BeginForm("Kiosk", "Kiosk", FormMethod.Post, new { id = "kioskForm" }))
+    {
+
+        @Html.AntiForgeryToken()
+
+        @Html.ValidationSummary(true)
+
+        @Html.HiddenFor(m => m.calendarID)
+
+
+        if (ViewBag.hasDeptCode == false || ViewBag.hasDeptCode == null)
+        {
+
+            <iwe-message class="paragraph">
+
+                Event Kiosk is not available
+
+            </iwe-message>
+
+        }
+        else if (Model.enabled == false)
+        {
+
+            <div class="row">
+
+                <div class="col-xs-4">
+
+                    Enable event kiosk for this event:
+
+                </div>
+
+                <div class="col-xs-4">
+
+                    <button type="submit" class="btn btn-default" name="Enable" value="Enable">
+
+                        Enable
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        }
+        else
+        {
+
+            <div class="row col-sm-12"><span class="tag-label">ID:</span> <b> @Model.kioskID </b></div>
+
+            <div class="row col-sm-12"><span class="tag-label">Key:</span> <b> @Model.key </b></div>
+
+            <br />
+
+
+            if (isKioskMgr)  /* not requiring kiosk manager role */
+            {
+
+                <div class="row">
+
+                    <div class="col-sm-4">
+
+                        Send event reservation list to event kiosk: <br />
+
+                        This is typically done after your reservation period is over (right before your event).
+
+                    </div>
+
+                    <div class="col-sm-4">
+
+
+                        @foreach (var e in Model.reserveTypes)
+                        {
+
+                            if (e.enabled)
+                            {
+
+                                <div><label><input type="checkbox" value="@e.type" name=ckb@(e.type) checked /> @e.typeName (@e.count)</label></div>
+                            }
+                            else
+                            {
+                                <div><label><input type="checkbox" value="@e.type" name=ckb@(e.type) /> @e.typeName (@e.count)</label></div>
+                            }
+
+                        }
+
+
+                        <br />
+
+                        <div>
+
+                            <button type="button" class="btn btn-default" name="Send" value="Send" id="SendList">Send</button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            }
+
+
+
+            <p>
+                <br />
+
+                Visit the @Html.RouteLink("Attendance page", new { action = "Attend", controller = "Attend", area = "Workgroup", id = Model.calendarID }) to load the event kiosk official attendance list after your event.
+            </p>
+
+
+
+            if (isKioskMgr)
+            {
+
+                <iwe-message class="paragraph">
+
+                    <div style="padding: 3px 0px 5px 0px ">
+
+                        <iwe-button id="updateKiosk" unresolved class="normal"> Update Kiosk </iwe-button>
+
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+
+                        @Html.RouteLink("[edit event]", new { action = "Event", controller = "Event", area = "Workgroup", unitID = Model.unitID, calendarID = Model.calendarID, term = Model.term })
+
+                    </div>
+
+                    Note: Changes to the event title, description, start date or end date can be made available to kiosk using "Update Kiosk".
+
+                    However, to modify other Event Kiosk settings for this event,
+
+                    please use <a href=https://saweb.uclanet.ucla.edu/SAWeb/SAIT/Lobby/Staff/CreateKiosk.aspx?EventId =@(Model.kioskID) style="text-decoration: underline; font-weight: bold">SA Web</a>.
+
+                </iwe-message>
+
+            }
+
+
+        }
+
+
+    }
+
+
+
+    <div class="alert-message" style="display: none">
+
+        <br />
+
+        <iwe-message class="paragraph alert-message-content">
+
+            @Html.Raw(@ViewBag.alertMsg)
+
+        </iwe-message>
+
+        <br />
+
+    </div>
+
+
+
+</div>
+
+
+
+@section Scripts
+{
+
+    <script type="text/javascript">
+
+        pathroot = '@Url.Action("/","Kiosk")';
+
+    </script>
+
+
+
+    <link rel="stylesheet" href="@Url.Content(" ~ /Content/_bootstrap.css")" />
+
+    <link rel="stylesheet" href="@Url.Content(" ~ /Content/_bootstrap-fix.css")" />
+
+    <script src="@Url.Content(" ~ /Scripts/controllers/kiosk.js")" type="text/javascript"></script>
+
+}
